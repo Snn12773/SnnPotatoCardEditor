@@ -103,13 +103,13 @@ for (const f of ['front_I', 'front_II', 'front_III', 'front_IV', 'derivative', '
 }
 copy('assets/data/cards.json', 'assets/data/cards.json');
 
-// 文档
+// 文档（编辑器手册在 card-editor/docs，设计文档仍在上一级 PCR_build/docs）
 const docMap = {
   'docs/卡牌编辑器-使用说明.md': '使用说明.md',
-  'docs/土豆牌-卡牌库-v1.md': '卡牌库.md',
-  'docs/土豆牌-设计总结-交接用.md': '设计总结.md',
-  'docs/土豆牌-设计梳理-v0.2.md': '规则设计-v0.2.md',
-  'docs/待定数值清单.md': '待定数值清单.md'
+  '../docs/土豆牌-卡牌库-v1.md': '卡牌库.md',
+  '../docs/土豆牌-设计总结-交接用.md': '设计总结.md',
+  '../docs/土豆牌-设计梳理-v0.2.md': '规则设计-v0.2.md',
+  '../docs/待定数值清单.md': '待定数值清单.md'
 };
 const copiedDocs = [];
 for (const [src, dest] of Object.entries(docMap)) {
@@ -143,7 +143,7 @@ const readme = `# 土豆牌 · 卡牌工作台 v${VERSION}
 - 衍生物等级的卡牌使用专用卡框（derivative），卡面只显示名称、卡图与三个数值
 - 选中卡牌即在右侧显示描述与设计思路
 - 支持编辑、新建、复制、删除，改动自动保存到浏览器本地
-- **数据包导出 / 导入**：卡牌数据与卡图一起打包成单个 `.pcard` 文件，便于整体分发与备份
+- **数据包导出 / 导入**：卡牌数据与卡图一起打包成单个 \`.pcard\` 文件，便于整体分发与备份
 - **增量导出 / 导入**：只交换修改过的卡牌，冲突时逐条裁决
 - **范围图形**：在牌效文本中插入 3×3 示意图，代替文字描述方位
 

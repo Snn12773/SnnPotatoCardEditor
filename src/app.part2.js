@@ -581,11 +581,14 @@
   // 默认更新源（随构建一起发布，必须保持长期稳定）：
   //   ① GitHub Pages —— 主源，同域直接 fetch manifest.json
   //   ② jsDelivr    —— 备用源，按分支取（不能用 tag，否则每个版本都要改这里）
+  //   ③ Gitee Pages —— 国内镜像，无反代时最快；不支持直连 raw（无 CORS / nosniff），
+  //                    所以必须开 Pages；探测时 fetch 失败会自动回退 JSONP
   // 用户在「数据 → 更新源设置」里填的地址会覆盖此列表（存 localStorage）。
   var UPD_REPO = 'Snn12773/SnnPotatoCardEditor';
   var DEFAULT_SOURCES = [
     'https://snn12773.github.io/SnnPotatoCardEditor/',
-    'https://cdn.jsdelivr.net/gh/' + UPD_REPO + '@main/'
+    'https://cdn.jsdelivr.net/gh/' + UPD_REPO + '@main/',
+    'https://snn12772.gitee.io/SnnPotatoCardEditor/'
   ];
   function getSources() {
     try {
@@ -614,12 +617,14 @@
     }
     return 0;
   }
-  // 单源探测：http(s) → fetch manifest.json；file:// → JSONP manifest.js（script 标签不受 CORS 限制）
-  function probeSource(src, timeout) {
-    timeout = timeout || UPD_TIMEOUT;
-    // 规范化为目录（末尾必带 /）；不要走 joinUrl——空文件名会命中默认值 index.html
-    var base = String(src).replace(/\/+$/, '') + '/';
-    if (location.protocol === 'file:') {
+  // 单源探测（方案二选一，失败自动回退）：
+  //   http(s) → 先 fetch manifest.json（要求对方带 CORS 头）
+  //            拿不到就回退 JSONP 加载 manifest.js（script 标签不受 CORS 限制）
+  //   file://  → 直接 JSONP（本地页面的 fetch 常被跨域策略挡掉）
+  // JSONP 用固定回调名 window.__potatoManifest，所以必须串行，不能并发。
+  var jsonpLock = Promise.resolve();
+  function probeJsonp(base, timeout) {
+    var run = function () {
       return new Promise(function (resolve) {
         var done = false;
         var s = document.createElement('script');
@@ -630,34 +635,43 @@
           clearTimeout(timer);
           if (s.parentNode) s.parentNode.removeChild(s);
           try { delete window.__potatoManifest; } catch (e) { window.__potatoManifest = undefined; }
-          resolve(ok && data && data.version ? { src: src, manifest: data } : null);
+          resolve(ok && data && data.version ? { src: base, manifest: data } : null);
         }
         window.__potatoManifest = function (m) { finish(true, m); };
         s.src = base + 'manifest.js?t=' + Date.now();
         s.onerror = function () { finish(false); };
         document.head.appendChild(s);
       });
-    }
+    };
+    var p = jsonpLock.then(run, run);
+    jsonpLock = p.then(function () {}, function () {});
+    return p;
+  }
+  function probeFetch(base, timeout) {
     return new Promise(function (resolve) {
       var ctl = typeof AbortController === 'function' ? new AbortController() : null;
       var timer = setTimeout(function () { if (ctl) ctl.abort(); }, timeout);
       fetch(base + 'manifest.json', { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
         .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (m) { clearTimeout(timer); resolve(m && m.version ? { src: src, manifest: m } : null); })
+        .then(function (m) { clearTimeout(timer); resolve(m && m.version ? { src: base, manifest: m } : null); })
         .catch(function () { clearTimeout(timer); resolve(null); });
     });
   }
-  // 并行探测所有源；file:// 下 JSONP 共用一个回调名，退化为串行
+  function probeSource(src, timeout) {
+    timeout = timeout || UPD_TIMEOUT;
+    // 规范化为目录（末尾必带 /）；不要走 joinUrl——空文件名会命中默认值 index.html
+    var base = String(src).replace(/\/+$/, '') + '/';
+    if (location.protocol === 'file:') return probeJsonp(base, timeout);
+    return probeFetch(base, timeout).then(function (r) {
+      // 无 CORS 头（Gitee raw / 自己的静态服务器常见）→ 退回 JSONP
+      return r || probeJsonp(base, timeout);
+    });
+  }
+  // 并行探测所有源（JSONP 内部已串行）；file:// 下没有 fetch 可用，整段走串行 JSONP
   function probeAll(sources, timeout) {
-    if (location.protocol === 'file:') {
-      return sources.reduce(function (seq, src) {
-        return seq.then(function (out) {
-          return probeSource(src, timeout).then(function (r) { out.push(r); return out; });
-        });
-      }, Promise.resolve([])).then(function (out) { return out.filter(Boolean); });
-    }
-    return Promise.all(sources.map(function (src) { return probeSource(src, timeout); }))
-      .then(function (out) { return out.filter(Boolean); });
+    return Promise.all(sources.map(function (src) {
+      return probeSource(src, timeout).then(function (r) { return r; }, function () { return null; });
+    })).then(function (out) { return out.filter(Boolean); });
   }
   // manual=true 时无论结果如何都给出反馈；否则只在发现新版时提示
   function checkUpdates(manual, probeAllFn) {

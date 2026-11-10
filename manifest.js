@@ -1,1 +1,1 @@
-window.__potatoManifest&&window.__potatoManifest({"version":"0.1.5","buildTime":"2026-11-10T11:18:37.645Z","notes":"数据包导出/导入；发布包不含卡牌数据","file":"index.html?v=0.1.5"});
+window.__potatoManifest&&window.__potatoManifest({"version":"0.1.6","buildTime":"2026-11-10T12:27:46.091Z","notes":"新增 Gitee Pages 更新源；无 CORS 的源自动回退 JSONP 探测","file":"index.html?v=0.1.6"});

@@ -8,7 +8,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = path.resolve(import.meta.dirname, '..');
-const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+// 允许传绝对路径（package.mjs 会传绝对种子路径；path.join 不会重置到盘符）
+const read = (p) => fs.readFileSync(path.isAbsolute(p) ? p : path.join(root, p), 'utf8');
 
 const args = process.argv.slice(2);
 const argOf = (name, dflt) => {
