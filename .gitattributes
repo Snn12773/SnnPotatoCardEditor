@@ -1,0 +1,9 @@
+# 统一行尾：文本文件在仓库里存 LF，避免 Windows / macOS 来回改整份文件
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.pdf binary
+*.woff2 binary
+*.ttf binary
+*.zip binary

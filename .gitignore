@@ -1,0 +1,43 @@
+# ===== 不进仓库：卡牌数据与内部文档（团队私下分发） =====
+assets/data/cards.json
+docs/
+SNN/
+design_v0.pdf
+design_v0.txt
+assets/ref/
+
+# ===== 不进仓库：构建依赖与产物 =====
+node_modules/
+dist/
+out/
+
+# 中间产物 / 素材裁切
+crops/
+crops_board/
+crops_card/
+pages/
+pdf_images/
+
+# 开发过程截图（体积大且可再生）
+assets/shot-*.png
+assets/check-*.png
+assets/pkg-*.png
+assets/font-check.png
+assets/font-check.html
+
+# ===== 开发期脚本与测试（只在本地用，仓库仅作更新源） =====
+tools/test-*.mjs
+tools/verify-*.mjs
+tools/shot-*.mjs
+tools/check-*.mjs
+tools/measure-*.mjs
+tools/ink-map.mjs
+tools/font-check.mjs
+tools/screenshot.mjs
+tools/dev-build.mjs
+tools/*.py
+
+# 系统垃圾
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,1 @@
+window.__potatoManifest&&window.__potatoManifest({"version":"0.1.5","buildTime":"2026-11-10T11:18:37.645Z","notes":"数据包导出/导入；发布包不含卡牌数据","file":"index.html?v=0.1.5"});
