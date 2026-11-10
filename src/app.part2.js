@@ -104,6 +104,71 @@
     });
   }
 
+  /* ---------- 导出文件夹（File System Access API，桌面 Chromium） ---------- */
+  // 网页本身无法直接写磁盘；桌面 Edge/Chrome 支持「选择一次文件夹后记住」（句柄存
+  // IndexedDB），之后每次导出静默写进「<所选文件夹>/导出/」。移动端浏览器不支持
+  // 选择器，exportToFile 返回 null，调用方回退到 分享 / 下载。
+  function idbFs() {
+    return new Promise(function (res) {
+      try {
+        var req = indexedDB.open('potato-fs', 1);
+        req.onupgradeneeded = function () { req.result.createObjectStore('fs'); };
+        req.onsuccess = function () { res(req.result); };
+        req.onerror = function () { res(null); };
+      } catch (e) { res(null); }
+    });
+  }
+  function idbGet(key) {
+    return idbFs().then(function (db) {
+      if (!db) return null;
+      return new Promise(function (res) {
+        try {
+          var tx = db.transaction('fs').objectStore('fs').get(key);
+          tx.onsuccess = function () { res(tx.result || null); };
+          tx.onerror = function () { res(null); };
+        } catch (e) { res(null); }
+      });
+    });
+  }
+  function idbSet(key, val) {
+    return idbFs().then(function (db) {
+      if (!db) return false;
+      return new Promise(function (res) {
+        try {
+          var tx = db.transaction('fs', 'readwrite').objectStore('fs').put(val, key);
+          tx.onsuccess = function () { res(true); };
+          tx.onerror = function () { res(false); };
+        } catch (e) { res(false); }
+      });
+    });
+  }
+  var FS_EXPORT = (typeof window.showDirectoryPicker === 'function');
+  async function exportToFile(filename, text) {
+    if (!FS_EXPORT) return null;                     // 浏览器不支持 → 调用方走分享/下载
+    try {
+      var dir = await idbGet('exportDir');
+      if (dir) {
+        try {
+          if (await dir.queryPermission({ mode: 'readwrite' }) !== 'granted') {
+            if (await dir.requestPermission({ mode: 'readwrite' }) !== 'granted') dir = null;
+          }
+        } catch (e) { dir = null; }                  // 句柄失效（目录被删/移动）→ 重新选
+      }
+      if (!dir) dir = await window.showDirectoryPicker({ mode: 'readwrite', id: 'potato-export' });
+      await idbSet('exportDir', dir);
+      var sub = await dir.getDirectoryHandle('导出', { create: true });
+      var fh = await sub.getFileHandle(filename, { create: true });
+      var w = await fh.createWritable();
+      await w.write(new Blob([text], { type: 'application/json;charset=utf-8' }));
+      await w.close();
+      return { ok: true, where: (dir.name || '所选文件夹') + '/导出/' + filename };
+    } catch (e) {
+      if (e && e.name === 'AbortError') return { ok: false, cancel: true };
+      return null;                                   // 其它失败 → 回退下载
+    }
+  }
+  function resetExportDir() { return idbSet('exportDir', null); }
+
   /* ---------- 信封构造 ---------- */
   function makeFullEnvelope() {
     return {
@@ -219,6 +284,7 @@
     var removed = (opts.removed || []).filter(function (r) { return r && r.id; });
     if (removed.length) pkg.data.removed = clone(removed);   // 导出方删掉的卡（导入方可选择是否同步删除）
     if (opts.scope) pkg.scope = clone(opts.scope);           // 导出范围说明，仅用于导入预览展示
+    if (opts.by) pkg.by = String(opts.by).trim().slice(0, 24); // 导出者（必填），导入方写进修改记录
     return pkg;
   }
   function validatePackage(pkg) {
@@ -1097,7 +1163,8 @@
     importPackageObj: importPackageObj, importAny: importAny, applyCards: applyCards,
     // 导出 / 导入工作台（part3）所需的基础能力
     download: download, pickFile: pickFile, backupBeforeImport: backupBeforeImport,
-    copyText: copyText, splitDataUrl: splitDataUrl, joinDataUrl: joinDataUrl
+    copyText: copyText, splitDataUrl: splitDataUrl, joinDataUrl: joinDataUrl,
+    exportToFile: exportToFile, resetExportDir: resetExportDir, FS_EXPORT: FS_EXPORT
   };
   // 更新检查模块（测试可传入自定义 probeAllFn 模拟源）
   window.__POTATO_UPD__ = {

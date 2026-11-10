@@ -143,7 +143,8 @@
   var exp = null;
 
   function openExport() {
-    exp = { mode: 'changes', filter: 'all', sel: {} };
+    exp = { mode: 'changes', filter: 'all', sel: {}, by: '' };
+    try { exp.by = localStorage.getItem('potato.exporter') || ''; } catch (e) { /* 隐私模式 */ }
     exp.rows = buildExportRows();
     resetSel(exp);
     drawExport();
@@ -196,6 +197,7 @@
     return IO.makePackage({
       cards: cards,
       removed: removed,
+      by: String(st.by || '').trim(),
       scope: { mode: st.mode, baseline: Store.baseRevision, cards: cards.length, removed: removed.length }
     });
   }
@@ -220,6 +222,8 @@
     var body =
       '<div class="xf-note">导出为数据包（.pcard）。默认只打包<b>上次导入之后</b>新增 / 修改的内容；' +
       '也可切到「全部卡牌」或「手动挑选」。差异按「字段 <i>旧值</i> → 新值」显示。</div>' +
+      '<div class="xf-byrow"><label>提交者<i>必填</i></label>' +
+      '<input id="xfBy" maxlength="24" placeholder="你的名字，随数据包写入队友的修改记录"></div>' +
       '<div class="xf-scope">' + scopes.map(function (s) {
         return '<button type="button" data-mode="' + s[0] + '"' +
           (st.mode === s[0] ? ' class="on"' : '') + '>' + s[1] + '</button>';
@@ -243,8 +247,14 @@
     $('#modalBody').innerHTML = body;
     $('#modalFoot').innerHTML =
       '<button class="btn" id="xfCancel">取消</button>' +
+      (IO.FS_EXPORT ? '<button class="btn" id="xfDir" title="清除记住的导出文件夹，下次导出时重新选择">更换文件夹</button>' : '') +
       '<button class="btn solid" id="xfOk">导出数据包</button>';
     A.openModalBound('导出数据包 · 预览');
+    var byInp = $('#xfBy');
+    if (byInp) {
+      byInp.value = st.by || '';
+      byInp.oninput = function () { st.by = byInp.value; syncExpRows(); };
+    }
     syncExpRows();
     bindExport();
   }
@@ -264,7 +274,7 @@
     var cnt = $('#xfCnt');
     if (cnt) cnt.innerHTML = exportStat(st);
     var ok = $('#xfOk');
-    if (ok) ok.disabled = !buildPkg(st);
+    if (ok) ok.disabled = !buildPkg(st) || !String(st.by || '').trim();
   }
 
   function bindExport() {
@@ -300,20 +310,39 @@
     };
     var ok = $('#xfOk');
     if (ok) ok.onclick = doExport;
+    var dirBtn = $('#xfDir');
+    if (dirBtn) dirBtn.onclick = function () {
+      IO.resetExportDir().then(function () { toast('已清除导出文件夹，下次导出时重新选择'); });
+    };
     var cancel = $('#xfCancel');
     if (cancel) cancel.onclick = function () { A.closeModalBound(); exp = null; };
   }
 
   function doExport() {
-    var pkg = buildPkg(exp);
+    var st = exp;
+    var by = String(st.by || '').trim();
+    if (!by) { toast('请先填写提交者名字'); var bi = $('#xfBy'); if (bi) bi.focus(); return; }
+    try { localStorage.setItem('potato.exporter', by); } catch (e) { /* 隐私模式 */ }
+    var pkg = buildPkg(st);
     if (!pkg) { toast('没有勾选任何内容'); return; }
     var name = '土豆牌_数据包_' + A.stamp() + '.pcard';
-    IO.download(name, JSON.stringify(pkg, null, 2));
+    var text = JSON.stringify(pkg, null, 2);
     var n = pkg.data.cards.length;
     var rm = (pkg.data.removed || []).length;
-    A.closeModalBound();
-    exp = null;
-    toast('已导出 ' + n + ' 张卡牌' + (rm ? ' · ' + rm + ' 项删除' : ''));
+    // 桌面 Chromium：写进所选文件夹下的「导出」子文件夹；其余环境回退 分享/下载
+    IO.exportToFile(name, text).then(function (r) {
+      if (r && r.ok) {
+        A.closeModalBound();
+        exp = null;
+        toast('已导出到「' + r.where + '」');
+        return;
+      }
+      if (r && r.cancel) { toast('已取消，未导出'); return; }  // 弹窗保持打开，可重试
+      A.closeModalBound();
+      exp = null;
+      IO.download(name, text);   // 微信内会弹出「复制数据」提示，须在关掉预览后再弹
+      toast('已导出 ' + n + ' 张卡牌' + (rm ? ' · ' + rm + ' 项删除' : ''));
+    });
   }
 
   /* ============================================================
@@ -332,7 +361,7 @@
 
   // 解析文件 → 生成待导入清单（不落库）
   function buildPlan(sourceName, obj) {
-    var cards = [], removed = [], meta = { source: sourceName, kind: '', gen: '', created: '', scope: null };
+    var cards = [], removed = [], meta = { source: sourceName, kind: '', gen: '', created: '', scope: null, exporter: '' };
     if (obj.kind === IO.PKG_KIND) {
       var err = IO.validatePackage(obj);
       if (err) { toast(err); return null; }
@@ -344,6 +373,7 @@
       meta.gen = obj.generator && obj.generator.version ? 'v' + obj.generator.version : '';
       meta.created = obj.createdAt || '';
       meta.scope = obj.scope || null;
+      meta.exporter = String(obj.by || '').trim().slice(0, 24);   // 导出者姓名，写进本机修改记录
     } else if (obj.kind === 'potato-card-editor' && obj.format === 'full') {
       var e2 = IO.validateEnvelope(obj, 'full');
       if (e2) { toast(e2); return null; }
@@ -434,6 +464,7 @@
     var head = '<div class="xf-note">来源 <b>' + esc(meta.source) + '</b>' +
       (meta.kind ? ' · ' + esc(meta.kind) : '') +
       (meta.gen ? ' · 生成 ' + esc(meta.gen) : '') +
+      (meta.exporter ? ' · 提交者 <b>' + esc(meta.exporter) + '</b>' : '') +
       (meta.created ? ' · ' + esc(fmtTime(meta.created)) : '') +
       (meta.scope ? '<br>导出范围：' + esc(scopeText(meta.scope)) : '') +
       '<br>本地现有 <b>' + Store.cards.length + '</b> 张，本包带来 <b>' + eff + '</b> 张改动' +
@@ -552,13 +583,15 @@
 
     IO.backupBeforeImport();     // 先备份当前数据（.pcard）
 
+    // 数据包的提交者（导出者）→ 写进每条导入记录，卡面的 by 保持最初的创建者不动
+    var who = p.plan.meta.exporter || '';
     var add = 0, upd = 0, del = 0;
     picked.forEach(function (e) {
       if (e.kind === 'same') { Store.baseHashes[e.id] = hashCard(e.card); return; }
       if (e.kind === 'remove') {
         var i0 = Store.indexOf(e.id);
         if (i0 >= 0) {
-          Store.log('import', e.id, Store.cards[i0].name, clone(Store.cards[i0]), null);
+          Store.log('import', e.id, Store.cards[i0].name, clone(Store.cards[i0]), null, who);
           Store.cards.splice(i0, 1);
           del++;
         }
@@ -569,14 +602,14 @@
       if (e.kind === 'add') {
         if (idx < 0) {
           Store.cards.push(e.card);
-          Store.log('import', e.id, e.card.name, null, clone(e.card));
+          Store.log('import', e.id, e.card.name, null, clone(e.card), who);
           add++;
         }
       } else {
         if (idx >= 0) {
           var before = clone(Store.cards[idx]);
           Store.cards[idx] = e.card;
-          Store.log('import', e.id, e.card.name, before, clone(e.card));
+          Store.log('import', e.id, e.card.name, before, clone(e.card), who);
           upd++;
         }
       }
@@ -588,7 +621,7 @@
       p.plan.entries.forEach(function (e) { if (e.kind !== 'remove') keep[e.id] = 1; });
       Store.cards.slice().forEach(function (c) {
         if (keep[c.id]) return;
-        Store.log('import', c.id, c.name, clone(c), null);
+        Store.log('import', c.id, c.name, clone(c), null, who);
         var i = Store.indexOf(c.id);
         if (i >= 0) Store.cards.splice(i, 1);
         delete Store.baseHashes[c.id];

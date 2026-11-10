@@ -109,7 +109,7 @@
       for (var i = 0; i < this.cards.length; i++) if (this.cards[i].id === id) return i;
       return -1;
     },
-    log: function (action, cardId, cardName, before, after) {
+    log: function (action, cardId, cardName, before, after, by) {
       var delta = {};
       if (before && after) {
         Object.keys(after).forEach(function (k) {
@@ -118,12 +118,16 @@
           }
         });
       }
-      this.revisions.unshift({
+      var entry = {
         id: uid('rev'), ts: nowIso(), action: action, cardId: cardId, cardName: cardName,
         before: before ? clone(before) : null,
         after: after ? clone(after) : null,
         delta: delta
-      });
+      };
+      // 提交者：仅导入时由数据包的导出者提供（本机编辑不填，卡面的 by 始终是最初创建者）
+      var who = String(by == null ? '' : by).trim().slice(0, 24);
+      if (who) entry.by = who;
+      this.revisions.unshift(entry);
       if (this.revisions.length > 500) this.revisions.length = 500;
     }
   };
@@ -853,6 +857,7 @@
         }).join('\n')
         : '';
       return '<div class="rev"><div class="h"><span class="act">' + (actName[r.action] || r.action) + '</span>' +
+        (r.by ? '<span class="by">@' + esc(r.by) + '</span>' : '') +
         '<span class="d">' + esc(r.ts.replace('T', ' ').slice(0, 19)) + '</span></div>' +
         (detail ? '<div class="b">' + esc(detail) + '</div>' : '') + '</div>';
     }).join('') + '</div>';
