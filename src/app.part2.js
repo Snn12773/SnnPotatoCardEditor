@@ -581,14 +581,17 @@
   // 默认更新源（随构建一起发布，必须保持长期稳定）：
   //   ① GitHub Pages —— 主源，同域直接 fetch manifest.json
   //   ② jsDelivr    —— 备用源，按分支取（不能用 tag，否则每个版本都要改这里）
-  //   ③ Gitee Pages —— 国内镜像，无反代时最快；不支持直连 raw（无 CORS / nosniff），
-  //                    所以必须开 Pages；探测时 fetch 失败会自动回退 JSONP
+  //   ③ Gitee 仓库   —— 国内镜像。Gitee Pages 已于 2024 年下线，raw 又缺 CORS 且带
+  //                    nosniff（连 script 标签都拒），只剩 API v5 一条路：它带
+  //                    Access-Control-Allow-Origin: *，返回 base64 文件内容。
+  //                    该源只用于「发现新版」，点更新仍跳到 Pages 实际运行。
+  //                    地址写成仓库根即可：https://gitee.com/<owner>/<repo>[#分支]
   // 用户在「数据 → 更新源设置」里填的地址会覆盖此列表（存 localStorage）。
   var UPD_REPO = 'Snn12773/SnnPotatoCardEditor';
   var DEFAULT_SOURCES = [
     'https://snn12773.github.io/SnnPotatoCardEditor/',
     'https://cdn.jsdelivr.net/gh/' + UPD_REPO + '@main/',
-    'https://snn12772.gitee.io/SnnPotatoCardEditor/'
+    'https://gitee.com/snn12772/SnnPotatoCardEditor'
   ];
   function getSources() {
     try {
@@ -657,13 +660,55 @@
         .catch(function () { clearTimeout(timer); resolve(null); });
     });
   }
+  // Gitee 仓库地址 → 走 API v5 读 manifest.json（唯一带 CORS 的官方通道）
+  var GITEE_RE = /^https?:\/\/(?:www\.)?gitee\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/i;
+  function parseGitee(src) {
+    var s = String(src || '').trim();
+    var ref = 'main';
+    var at = s.indexOf('#');
+    if (at >= 0) { ref = s.slice(at + 1).trim() || 'main'; s = s.slice(0, at); }
+    var m = s.match(GITEE_RE);
+    if (!m) return null;
+    return { owner: m[1], repo: m[2], ref: ref };
+  }
+  // Gitee 返回的 content 是 base64，且可能含中文（notes 字段）→ 必须按 UTF-8 解码
+  function b64utf8(b64) {
+    if (typeof atob !== 'function') return '';
+    var bin = atob(String(b64).replace(/\s+/g, ''));
+    var i, bytes = new Uint8Array(bin.length);
+    for (i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    if (typeof TextDecoder === 'function') return new TextDecoder('utf-8').decode(bytes);
+    return decodeURIComponent(escape(bin));
+  }
+  function probeGitee(src, timeout) {
+    var g = parseGitee(src);
+    var api = 'https://gitee.com/api/v5/repos/' + g.owner + '/' + g.repo +
+      '/contents/manifest.json?ref=' + encodeURIComponent(g.ref);
+    return new Promise(function (resolve) {
+      var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      var timer = setTimeout(function () { if (ctl) ctl.abort(); }, timeout);
+      fetch(api, { cache: 'no-store', signal: ctl ? ctl.signal : undefined })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          clearTimeout(timer);
+          var m = null;
+          if (j && j.content) { try { m = JSON.parse(b64utf8(j.content)); } catch (e) { m = null; } }
+          // Gitee 只能读到文件、不能当页面跑 → 附带 open（实际打开地址）
+          resolve(m && m.version
+            ? { src: String(src).trim(), open: DEFAULT_SOURCES[0], manifest: m }
+            : null);
+        })
+        .catch(function () { clearTimeout(timer); resolve(null); });
+    });
+  }
   function probeSource(src, timeout) {
     timeout = timeout || UPD_TIMEOUT;
+    if (parseGitee(src)) return probeGitee(src, timeout);
     // 规范化为目录（末尾必带 /）；不要走 joinUrl——空文件名会命中默认值 index.html
     var base = String(src).replace(/\/+$/, '') + '/';
     if (location.protocol === 'file:') return probeJsonp(base, timeout);
     return probeFetch(base, timeout).then(function (r) {
-      // 无 CORS 头（Gitee raw / 自己的静态服务器常见）→ 退回 JSONP
+      // 无 CORS 头（内网静态服务器常见）→ 退回 JSONP
       return r || probeJsonp(base, timeout);
     });
   }
@@ -698,7 +743,8 @@
         if (btn) {
           btn.removeAttribute('hidden');
           btn.setAttribute('data-file', m.file || 'index.html');
-          btn.setAttribute('data-src', best.src);
+          // Gitee 源只能读文件、不能当页面跑 → 用它的 open（Pages 地址）做跳转目标
+          btn.setAttribute('data-src', best.open || best.src);
           btn.title = '发现新版本 v' + m.version + '（来源：' + best.src + '）';
         }
         toast('发现新版本 v' + m.version + (m.notes ? '：' + m.notes : ''));
@@ -733,7 +779,7 @@
   function updateSettingsModal() {
     $('#modal').classList.remove('wide');
     $('#modalBody').innerHTML =
-      '<div class="hintline" style="margin-bottom:8px">更新检查地址（每行一个，填到目录级即可；支持 WorkBuddy 托管 / GitHub Pages / Gitee Pages。检查时并行探测所有源，取版本号最高的为准）：</div>' +
+      '<div class="hintline" style="margin-bottom:8px">更新检查地址（每行一个）：目录级地址（GitHub Pages / 自建静态目录）填到文件夹即可；Gitee 仓库直接填仓库根（如 https://gitee.com/用户名/仓库名，可用 #分支 指定）。检查时并行探测所有源，取版本号最高的为准：</div>' +
       '<textarea class="fx" id="updTa" rows="5" style="min-height:110px" placeholder="https://example.com/path-to-workbench/"></textarea>' +
       '<div class="hintline" style="margin-top:8px">当前版本 <b>v' + esc(APP_VER) + '</b>' +
       (location.protocol === 'file:' ? ' · 本地副本用 JSONP 检查，建议改用在线链接' : '') + '</div>';
@@ -1033,7 +1079,8 @@
   window.__POTATO_UPD__ = {
     checkUpdates: checkUpdates, applyUpdate: applyUpdate,
     getSources: getSources, setSources: setSources,
-    cmpVer: cmpVer, joinUrl: joinUrl, probeSource: probeSource, probeAll: probeAll
+    cmpVer: cmpVer, joinUrl: joinUrl, probeSource: probeSource, probeAll: probeAll,
+    parseGitee: parseGitee, b64utf8: b64utf8
   };
   // 主题模块
   window.__POTATO_THEME__ = {
