@@ -1,1 +1,1 @@
-window.__potatoManifest&&window.__potatoManifest({"version":"0.1.6","buildTime":"2026-11-10T12:27:46.091Z","notes":"新增 Gitee Pages 更新源；无 CORS 的源自动回退 JSONP 探测","file":"index.html?v=0.1.6"});
+window.__potatoManifest&&window.__potatoManifest({"version":"0.1.6","buildTime":"2026-11-10T12:27:52.517Z","notes":"新增 Gitee Pages 更新源；无 CORS 的源自动回退 JSONP 探测","file":"index.html?v=0.1.6"});
