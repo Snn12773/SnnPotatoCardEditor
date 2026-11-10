@@ -1,6 +1,6 @@
 {
-  "version": "0.1.7",
-  "buildTime": "2026-11-10T12:39:46.057Z",
-  "notes": "Gitee 更新源改走 API v5（Gitee Pages 已下线），国内线路 240ms",
-  "file": "index.html?v=0.1.7"
+  "version": "0.1.8",
+  "buildTime": "2026-11-10T15:39:57.546Z",
+  "notes": "导出/导入工作台：导出支持范围选择（默认导出自上次导入以来的全部新增与修改），新增导出与导入预览、冲突检测与按需导入",
+  "file": "index.html?v=0.1.8"
 }

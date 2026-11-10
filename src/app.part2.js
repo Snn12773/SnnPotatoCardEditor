@@ -7,7 +7,7 @@
   var A = window.__POTATO__;
   if (!A) return;
 
-  var $ = A.$, clone = A.clone, esc = A.esc, nowIso = A.nowIso, stamp = A.stamp;
+  var $ = A.$, $$ = A.$$, clone = A.clone, esc = A.esc, nowIso = A.nowIso, stamp = A.stamp;
   var toast = A.toast, Store = A.Store, UI = A.UI;
   var renderAll = A.renderAll, current = A.current, selectCard = A.selectCard;
   var frameHTML = A.frameHTML, uid = A.uid, todayStr = A.todayStr, parseTags = A.parseTags;
@@ -191,17 +191,30 @@
       return c;
     });
   }
-  function makePackage() {
-    var packed = packCards(Store.cards);
-    return {
+  // 打包：默认整库；传 opts 可只打包选中的卡牌 / 附带删除清单与范围说明
+  function makePackage(opts) {
+    opts = opts || {};
+    var src = Array.isArray(opts.cards) ? opts.cards : Store.cards;
+    var packed = packCards(src);
+    var ids = {};
+    src.forEach(function (c) { ids[c.id] = 1; });
+    // 变更记录只带与所选卡牌相关的部分，避免局部包拖着一整本历史
+    var revs = Array.isArray(opts.cards)
+      ? Store.revisions.filter(function (r) { return ids[r.cardId]; })
+      : Store.revisions;
+    var pkg = {
       kind: PKG_KIND,
       formatVersion: PKG_VERSION,
       generator: { name: '土豆牌卡牌工作台', version: APP_VER },
       createdAt: nowIso(),
-      data: { cards: packed.cards, revisions: clone(Store.revisions) },
+      data: { cards: packed.cards, revisions: clone(revs) },
       assets: packed.assets,
       extras: {}
     };
+    var removed = (opts.removed || []).filter(function (r) { return r && r.id; });
+    if (removed.length) pkg.data.removed = clone(removed);   // 导出方删掉的卡（导入方可选择是否同步删除）
+    if (opts.scope) pkg.scope = clone(opts.scope);           // 导出范围说明，仅用于导入预览展示
+    return pkg;
   }
   function validatePackage(pkg) {
     if (!pkg || typeof pkg !== 'object') return '不是有效的 JSON 对象';
@@ -321,15 +334,14 @@
       toast('已导入 ' + Store.cards.length + ' 张卡牌');
     }, 250);
   }
-  // 统一入口：数据包（.pcard）优先，仍兼容旧的全量 / 增量 JSON
+  // 统一入口：先过「导入预览」（勾选要导入的部分），确认后才落库
   function importAny(obj, fromText) {
     if (!obj || typeof obj !== 'object') { toast('内容不是有效的 JSON 对象'); return false; }
+    var X = window.__POTATO_XFER__;
+    if (X && X.showPreview) return X.showPreview(fromText || '导入内容', obj);
+    // 兜底（第三部分缺失时）：旧的全量替换
     if (obj.kind === PKG_KIND) return importPackageObj(obj);
     if (obj.kind === 'potato-card-editor' && obj.format === 'full') { handleFullEnvelope(obj); return true; }
-    if (obj.kind === 'potato-card-editor' && obj.format === 'delta') {
-      if (fromText) { toast('这是增量文件，请用「增量导入」'); return false; }
-      return true;
-    }
     toast('无法识别的文件类型（既不是数据包也不是旧版导出）');
     return false;
   }
@@ -338,7 +350,7 @@
       if (!file) return;
       var obj;
       try { obj = JSON.parse(file.text); } catch (e) { toast('文件解析失败（不是合法 JSON）'); return; }
-      importAny(obj, true);
+      importAny(obj, file.name);
     });
   }
 
@@ -495,12 +507,9 @@
   function tryPasteImport(t) {
     var obj;
     try { obj = JSON.parse(t); } catch (e) { toast('JSON 解析失败'); return; }
-    if (obj && obj.kind === PKG_KIND) { closeModal(); importPackageObj(obj); return; }
-    var err = validateEnvelope(obj);
-    if (err) { toast(err); return; }
+    if (!obj || typeof obj !== 'object') { toast('内容不是有效的 JSON 对象'); return; }
     closeModal();
-    if (obj.format === 'delta') handleDeltaEnvelope(obj);
-    else handleFullEnvelope(obj);
+    importAny(obj, '剪贴板');
   }
 
   /* ---------- 冲突弹窗 ---------- */
@@ -554,6 +563,13 @@
     renderAll();
     toast('冲突已解决：采用远端 ' + takeTheirs + ' 项');
     pendingConflicts = null;
+  }
+
+  /* ---------- 导入 / 导出工作台（第三部分优先，缺失则回落旧行为） ---------- */
+  function withXfer(fn, fallback) {
+    var X = window.__POTATO_XFER__;
+    if (X && typeof X[fn] === 'function') X[fn]();
+    else fallback();
   }
 
   /* ---------- 弹窗控制（复用 part1 的实现，保持单一来源）---------- */
@@ -870,10 +886,10 @@
       if (!b) return;
       var act = b.getAttribute('data-act');
       $('#menuPop').classList.remove('show');
-      if (act === 'exportFull') exportFull();
+      if (act === 'exportFull') withXfer('openExport', exportFull);
       else if (act === 'exportDelta') exportDelta();
       else if (act === 'copyJson') copyExport();
-      else if (act === 'importFull') importFull();
+      else if (act === 'importFull') withXfer('openImport', importFull);
       else if (act === 'importDelta') importDelta();
       else if (act === 'pasteImport') pasteImport();
       else if (act === 'resetSeed') resetSeed();
@@ -1073,7 +1089,10 @@
     PKG_KIND: PKG_KIND, PKG_VERSION: PKG_VERSION,
     makePackage: makePackage, packCards: packCards, unpackCards: unpackCards,
     validatePackage: validatePackage, packageSummary: packageSummary,
-    importPackageObj: importPackageObj, importAny: importAny, applyCards: applyCards
+    importPackageObj: importPackageObj, importAny: importAny, applyCards: applyCards,
+    // 导出 / 导入工作台（part3）所需的基础能力
+    download: download, pickFile: pickFile, backupBeforeImport: backupBeforeImport,
+    copyText: copyText, splitDataUrl: splitDataUrl, joinDataUrl: joinDataUrl
   };
   // 更新检查模块（测试可传入自定义 probeAllFn 模拟源）
   window.__POTATO_UPD__ = {

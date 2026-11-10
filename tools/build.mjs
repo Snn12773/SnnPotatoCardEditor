@@ -22,6 +22,9 @@ const OUT = argOf('--out', 'index.html');
 const tpl = read('src/index.template.html');
 const part1 = read('src/app.part1.js');
 const part2 = read('src/app.part2.js');
+// 第三部分（导出 / 导入工作台）可选：存在才合并
+const part3Path = path.join(root, 'src/app.part3.js');
+const part3 = fs.existsSync(part3Path) ? fs.readFileSync(part3Path, 'utf8') : '';
 const imgJson = read('assets/data/img.json').trim();
 
 // 种子：none / empty = 空卡库（发布版，数据由数据包提供）
@@ -34,7 +37,8 @@ const seed = JSON.parse(seedJson);
 console.log('images:', Object.keys(imgs).length, '| seed cards:', seed.cards.length,
   EMPTY_SEED ? '(空种子)' : '(' + SEED + ')');
 
-const appJs = part1 + '\n\n' + part2;
+const appJs = part1 + '\n\n' + part2 + (part3 ? '\n\n' + part3 : '');
+if (!part3) console.log('warn: src/app.part3.js 不存在，导入导出走旧流程');
 
 // 注意：String.replace 的替换串会把 $$ 解释为字面 $，因此必须用函数式替换，
 // 否则 app 代码里的 `function $$(...)` 会被改成 `function $(...)`，导致同名覆盖。
