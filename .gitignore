@@ -36,6 +36,8 @@ tools/font-check.mjs
 tools/screenshot.mjs
 tools/dev-build.mjs
 tools/*.py
+# 打包 / 分发脚本：只在本地用，不进仓库（含以后新增的）
+tools/package-*.mjs
 
 # 系统垃圾
 .DS_Store
