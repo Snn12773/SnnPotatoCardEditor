@@ -86,5 +86,15 @@ if (has('--no-push')) {
 } else {
   console.log('\n推送…');
   git(['push', '--follow-tags']);
+  // Gitee 镜像：配了 remote 就一起推，供国内更新源（API v5）读到最新 manifest
+  const remotes = (() => {
+    try { return execFileSync('git', ['remote'], { cwd: root, encoding: 'utf8' }).split(/\r?\n/).map((s) => s.trim()); }
+    catch { return []; }
+  })();
+  if (remotes.includes('gitee')) {
+    console.log('\n推送 Gitee 镜像…');
+    try { git(['push', 'gitee', 'main', '--follow-tags']); }
+    catch (e) { console.log('  Gitee 推送失败（不影响 GitHub）：' + String(e.message || e).split('\n')[0]); }
+  }
   console.log('\n完成：v' + ver + ' 已推送。若 Pages 首次启用，请到仓库 Settings → Pages 选择 main 分支根目录。');
 }
