@@ -1,1 +1,1 @@
-window.__potatoManifest&&window.__potatoManifest({"version":"0.1.8","buildTime":"2026-11-10T15:39:57.546Z","notes":"导出/导入工作台：导出支持范围选择（默认导出自上次导入以来的全部新增与修改），新增导出与导入预览、冲突检测与按需导入","file":"index.html?v=0.1.8"});
+window.__potatoManifest&&window.__potatoManifest({"version":"0.1.9","buildTime":"2026-11-10T16:01:25.693Z","notes":"移动端导入修复：安卓/iOS 系统文件选择器不再过滤 .pcard 数据包","file":"index.html?v=0.1.9"});

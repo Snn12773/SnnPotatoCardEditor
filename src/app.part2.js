@@ -86,7 +86,12 @@
   function pickFile(accept) {
     return new Promise(function (resolve) {
       var inp = document.createElement('input');
-      inp.type = 'file'; inp.accept = accept || '.json,application/json';
+      inp.type = 'file';
+      // 移动端（Android/iOS）的系统文件选择器不认识 .pcard 这类自定义扩展名，
+      // 会把它过滤成「不可选」甚至不显示；移动端干脆不设 accept，展示全部文件
+      var mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+        || navigator.maxTouchPoints > 1;
+      if (!mobile) inp.accept = accept || '.json,application/json';
       inp.onchange = function () {
         var f = inp.files && inp.files[0];
         if (!f) { resolve(null); return; }
