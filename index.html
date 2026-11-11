@@ -552,6 +552,9 @@ textarea.fx{resize:vertical;line-height:1.55}
 /* 衍生物：留空槽 / 成长回合不参与卡面渲染，表单里隐藏 */
 .form.deriv .deriv-hide{display:none}
 .hintline{font-size:9.5px;color:var(--muted);line-height:1.5}
+.upd-linkrow{display:flex;gap:6px;margin-top:9px}
+.upd-linkrow input{flex:1;min-width:0;padding:5px 7px;font-size:10px;border:2px solid var(--line);background:var(--field);color:var(--ink-2)}
+.upd-linkrow .btn{padding:4px 10px;font-size:10px}
 details.adv{border:1px dashed var(--line-soft);padding:6px 8px}
 details.adv summary{font-size:10px;color:var(--muted);cursor:pointer;letter-spacing:1px}
 
@@ -937,7 +940,7 @@ html[data-theme="dark"] .art-hint{background:rgba(6,10,14,.66)}
 "use strict";
 window.__IMG__ = {"front_I":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAABGCAYAAACOjMdmAAAAAXNSR0IArs4c6QAAAqpJREFUaIHtWztu4zAQHRnufIYtdmEsFgjSb6vORaqozw1SpU6VOlVu4F5buXCnNhdIZ2wT5AjpAiSF/YTRkCPZIhWNDL5m/Ex5yMchKZqfjAQeHp8+5XcWcX93m3FeEy7guii+u1wn4V9Z1p8hKCMmAgLeP+JlWm4rKlY5lduKiIiKVR7sczHfWwi6v7vNZki8Lgp6/4grgg4Fh4hYQDl5y5nLPrGYN8XE4MQiEds/HVrUjFg0oBaZx+I3V3nQ7zXOo1I3LSRC8VQ4UAtB4tSsI4QrnpJ1hEwdSYg1JCHWkIRYQxJiDUmINSQh1pCEWEMSYg1JiDUkIdaQhFhDEmIN5ytELtlb54AjRK6pWudAYzWeY2rcWY2fKnciMjUL1Lq69iH+73Y0Fi7/LDv3R2ratTP0a7kcbWeqrXzA2ewhdkZkvYm7Rx6Cm6tcjUhnH+Fby32x3lRR/NAxe4hjjz6DjFq+NoljGDy8bc9rEeZ+0GyLVR7cR7wRkaMFP0vSNppoHJb3N/653FYn+ePcEdIVidCa0+ZIXfl3cUcIV7reVKqIvjUna1Cijz/1PYJEeTSJi+hj4V87qxXivzUiMpOQGpNcign13xqRcrsf93lkYr6RUfjQPqdGBBZDrAx735qTlosJjTTQeI/wh95eX4mI6PllR38vll4LSA74atx3LFDz57NERL9//nDEZA+PT5/8BN0QwAHNIbCY7w9pns15rcbsl0QblEOwTD+Wa/5jcED9PyLbcsjo5fMfiztCuGJfJMgzJ7JgHSFa29O4FesI0ZRq3Ip1hHCFsjn5vj82ct/F1ZVGbU6kPT82d/4l8KFNTk9k+rFc8x+DAzM6XF9AhmPX7Ckcb3Uiopm8GTMEhpqeAI37I4iKbAoWgXLymz3ndTWJY6qXxb4AMOnEVdPSXA4AAAAASUVORK5CYII=","front_II":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAABGCAYAAACOjMdmAAAAAXNSR0IArs4c6QAAAp9JREFUaIHtW7FuAjEMNQh16dewdmSAoZWKitS/qIR0I+qEGE9C4juoqAQDHTp25WtYEBIdwKnxxXfHJXBOlbcYJ8HkxbETLrkGMIzT2YGXacR78tagulEogd7z4Nb9ugjrz7n5jISaQEj0ngfOJEbL1Ej8nFdeBbSf2PcmrfSByVNi7ahU7gLa5xaPifsWwHbvpmPHbfXTfuJsn+pw8kpjnM4OL4OBV+O31tef8+PU2u7/RhIbhaQDxgitDFECDXbOMDRpiISOSEQbIhFtiES0IRLRhkhEGyIRbYhEtCES0YZIRBsiEW2IRLQhEtGG/0uEP7IPRc8QwWepoemGiJaRrapnnsaHqmc8Eqo0vIrOH1a7DcDu1PjG8rXVLuyfIVJ0MvR41671RKrUiVXdZ4A+zhBbvJLL4cLv2bgL8Gjb5pHCGJn2E+cODBepFztQ5gyx7qzjJWuVmZN4/YK6N6+9NHLUDk7byVPiHCNn5+zAsgPq9A5JXjaRdJQ03ujn0TK9yJ7N/tnKnucJXyMnwTV7ncUIVg4XqUjCdeQkVLEnriMo+ZUkSqKKxBHEG0McPuxbPcJ/xMeI0UG6hn1rjIyWx7xPPeNzRcbOu8ZcxiOcKb0c5is2JM/48DTwdYTK1W4DAAA/X9/w0O1YJYLrdNrkZUHp+9LvPXQ7AGQ3TD3SGKezw7VvlY6WqRjoPmBu0IGC+1au8mz3C2ya8RTM68vqXPrIftaVvWhFB7JHqrqi+8pOkn3r7tfmCbDsiTRJMUZ4udROixT/j/ByqZ0WaX2uxaeTrbys526li08apT2R1L5uPfMvgaY2vj3h9WV1yb4vHdAj9H2Mukf2Uv1jfux7k78Zcw1cc3sCp5dhTIxQr4QC2ud/82pSZlqF+rLYLy2j/J92eAcUAAAAAElFTkSuQmCC","front_III":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAABGCAYAAACOjMdmAAAAAXNSR0IArs4c6QAAArBJREFUaIHtW7FOAzEMdatu/AYDG2LhF0ACCYluSB06dKw63IbEVKnbDaeODB2Q2IrEgAQ/ASsDf8DMhlSGayLXiXu5XNpzUN7iOkndvDh20kuuAwTTfL6iZRJxl407WNcKJnB21d93v2rh7XmpPytCXUAkzq76XiTuh7mW6rNPuStwP1Xfu7jSF6NFZu1Q3fK6wH3u0Zg46AH8/Prpo0Vm1Kty1/Z1dVh7pTPN56vrfr+Rsbb1t+dlObV+fstK3CgmHVSM4MoYJeBgpwxjk5pI7EhEpCERkYZERBoSEWlIRKQhEZGGREQaEhFpSESkIRGRhkREGhIRafi/ROgj+1h0g4h6lhqbrolIGVlf3XgaH6tueCRWqXlVnT98vX5AWzi+PKnsnyZSdTJ0eH7S6omU04lV22eAIc4Qe7SSytmg+Xl4KNw+ZKxHKmPk9iEzLdbEbJAHsQMuZ4htZ50gWctlThbrKxfYvdvacyOH7ahpO1nfgHC1Z7O/cc4OJDsovUD3RrZlE05XEscb/lwM81r2bPY3VvZtngg1chyaZq+NGFGVs0HOkmg6chx87LHriJKTRcaS8JFqBCcLe+YKYd/qEfojIUYMD9Iu7FtjpBiWeR97JuSKrDrfNOYMj1CmKsVSt/uOHJWYTAhPA11HsPx+/wQAgMf5C9yML6xSgep42mzLgtz3ud+7GV+Utk6PDI90pvl8tetbpcUwZwM9BPQNOhBw36qp3Nj9AplmNAXTeledyhDZz7qyV63ogPZIvit6qOzE2bfufm2eAMueSJJkY4SWc+2kSPb/CC3n2kmR1udadDrZyl09ty+dfdLI7Ym49m3rxr8EnNro9oTWu+qc/VA6KI/g9zHaHtm6+tOy7HuXvhmzC+xyewLrl2F0jGCvxALc53/zapIxrWJ9WewP66b4Z1Xn51cAAAAASUVORK5CYII=","front_IV":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAABGCAYAAACOjMdmAAAAAXNSR0IArs4c6QAAA7lJREFUaIHtWzFr20AU/uRmEcbJlA6htKk9GELAUOzf4LHQmC6ldOhWyJQugWYoKe3SDCXQrUMIWUo6dPRvsCkYgsFQOXETUpJmSUzQktYd7Hc+ne4i2SdHUtC3PD3dy9N99967u+gsAwLWNzZ74r0oYm1l2eB1pvAEyo+XbrpfI6H6/Ru7JkIGOBI6BEq5LmpWBqVcFzaq2LMqrmsAzKZmZbCY2wUA7FkVLUJrK8tGim7qRoE6CAAmygAAG1WYKGMxtwsbVamtDvg+p8SaSE85jUfRbVTR7GRQszLAYKSJDLWTPUVqv1NR+vOjY5BRxvrGZu/J0hIur5zGQemLuV3sdyoT849BiqWA/k1iSkZB6SbKE/VPMiU2Bi1rVmai/ikyrNhFhnGTjEjckRCJGhIiUUNCJGpIiEQNCZEo4fzs5HYQwW2JCBIiEURCJGpIiEQNqfOzk7D7EAhuT0TC7kBQSIhEDQmRqMFFhH/LHSfdRUTnfCRMnRGJysiOq7vexsdVd0UkrpLx8jp/KDz8g7Dw83DWs3+MiNfJUGN/duInT9onVpM+47uJM8QpsVGU9+42pOGeNrPs+sJuK9MiSLuj04K0n7+PDr1r5Oi0oHz4ENfbLDzootnJeNr58ed5hhj2rBPIrOUnJ+knF81OZqwcJsn7obRtHRe0a8Rxzg5h9iK9lK0DvZay3Uu/sNu4vOqnGIG/zs81RvIn6hBXdmkksnX2QDr8H3fkxCLmC1x39nLUCDUu3K870gkAau3iyCMlGzkVmXH8KdcRkrV2cUjCyDtIjCNpBFvHBSkZqhEd/9KIAGA1QT9Z0h0x0kUyQfmX1kh+roHmr6LjB2I6OTxtZh06kdGtOVdERKa0gvIP060NVWSCiDTEdYSXj3LnfUP7AGlzHneQwl/8Y/LSPqBgsnYI+U+5f2G3kZ7qD05+zr3lEbcnaXOePVeUANDqzLgi4tj98vKHNTNoUW0X/N0X/VIk1Ch4SCekNRJn6dj9Qkgzthgaea3ZRZRBzH7Sld1rRUevpTV7iVJndlL5l+5+S7kuYOSBwYrOk7lupFVy2syO9XejSGWNAP2Ucui9Vui1oJLy/0cGqzp/X2oXISl9r1VrFxkZaZqN+N6pv474tx9HV75p5MmIJGT2YesCL+fUJm7dxXa/usp/UDooIl+/fPbNPGr6+7VVAEDq44d3BiYM722JHna2t4bfj/BRiQs+vV1l1ywar1ffsO9Inr58FUK3/IMnsLO9Nfw0icez5y9i8bEYESD8B0jUOsZt5RU8AAAAAElFTkSuQmCC","derivative":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAABGCAYAAACOjMdmAAAAAXNSR0IArs4c6QAAAxBJREFUaIHtWz1v2zAQPQna9As0efDm3X8kHoui6FQgQKZ0CVBPKdqlmQIE6FQEQcbkj3j35sFoASFAlgzeDKSDcfTxSJoSSZuUoLfQTx9HvjuKpHVUBgzXN7fv/FiKmF9eZJQLQgWczWanblcrPD89id8oKAMiAgVstv6VTccVLFa1VAKAdMwVZbErUdD88iLL8eTZbAab7V4EVuwKbCgVwc+1BdrBdtKek/NnAtViZcj5eRvHSqm9xaqGspCd1MY+3s9xfXP7ngOJBqqlF7tydMRmC7Bc19J5zl3ro1ERXQs9VRbyxSnyyahSIiOEoKfwppRL2k5FCFXcpVIR0nUMQlLDICQ1DEJSwyAkNQxCUsLb60s/hEBfIgKDkAQxCEkNg5DUkL+9vsRuQxD0JyKxGxAK/RMyGfm9tI4B2ub+RaTrUITwJE/qHKEIcc2HxOIIIYRnkWJ7ugmneRblbXxXuZQf6WKJELpseQjf5KgPluvamh8R1JYpwkRkChkrno4DU8Yqdo6wDW8ckZSWLrocJwBA/e+v/RmhQ5wrJqMqiB1okkOMPfocZdTS9UkctXhquEmfBs3ot1zXotvSHQ2uz4g2Ingxcjr06s7bOJb0eaO/p+OqlT3KFSG2SPh6zrRGstVv44oQqnQyqowiXD3HPcjhYs84j9DJzyTCddIqC/P2Jh/7ByPCK/HxGOdcjK/9gxGZjnfjPo1MyBmZbkrztaeNCJY4xPKwu3qOl2URLtIIaR6hF4VY7eo8HsIuroapGGmtRUufzZMUm61sK5Rdjt7s19JGpE0fpTP0YlV79/kgMzu0HD14f4+xJ1IRcmiU0ZU8Egg83taea6kIce2bJpz6GXGOiA3RI9KU0398fF3mYs+XSxHh/zsodNy0bmp6vw/n7xIkXXw5Apo1Ded0OdPk+lCcOzEHAPjz+06E6tieDMnLAuDH/Gon5NfP7xloEPPNogmmNj0+3O+/H8GoYGSOtSbyAR1IaDSAfpr09eqb+I7k85fzkzeyDaiAx4f7/adJFB8+furEx2IoAPEfdybeI0Wwx/gAAAAASUVORK5CYII=","test_potato":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAeZJREFUWIXtlz1rwkAcxh9LnYQiBIcuWURKFidBXAQn14JfoC4ufocOfgeXLvoFCq5OgosImVxEJIuLQwgEIdMN6dIL53kvfxNoF59Fk5h7fv+XO++Ah/5ZpaIDLCaD1HMdxAnDObrg1XnBObrg/fObNPbdAIf5KAWAOGE3zxrNDgDguNtk99rjmdGDDLCdDlMAqFbKqNVbpHfWqyUAGLNBAuDmPMJ7ZIN4og6UxzwMfHiuY/yNFeAwH6XVSplsKtafIitAnLCrmqsMxHu6TC0mgzQXgCzZ4LjboNHsGCPv9vraZ0YAPuUoQHl6xApgGthWa/F5GPj5AXSD6sDCwEcY+KA2rhZAlX5bmlWRqlZMEgAA0oonl4Ib2oyNAKrouZFs2Gh2srTjd6nmnxzCFMiz6macsJt0q7pdTnmcsMxYBOHLMRnAJl1Xi40nl6Dwf4HNXGVKkRJAN4W4uWzEr8W68zFsjawEiBOWmakiVgHGCbsCKzQL2uNZaX+Ksmuxy2UTseF0cCblakJdCeTvFBhjE65Xy5sa3hutqWlh25Jtp8P0HF3Q7fWVc94kDrc/RcX2hPJ+ULf4iKrVWwgD32pOAoBiN8P3eXJ5uCkX5WyQ+2AiQnmug/0pguc6ePv4KnzYeehP9QN8lwDqtTuKCQAAAABJRU5ErkJggg==","potato_temp":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAKhJREFUWIXtlksWgCAIRakNuxZXXNPyyAPj56A3ND4XPBhEv4p1WAO01q7Zee9dFXsZYJZwTPa0kUDUACtBRx+tPQzEtTrS9xUkyv+MTi5JBCCPOwSFqACsQgVAgOj2iwDk1H4TQLRYgIz2QwBKaD8LkFU9C0DO1ZteQi9xBe07BeUApWOYMX4QIFPlPyMoj3XKZR2z7IOSzdJ2Owqt47PvnwEsUL+21w3mW1oEOunOgAAAAABJRU5ErkJggg=="};
 window.__SEED__ = {"cards":[]};
-window.__POTATO_VER__ = '0.2.0';
+window.__POTATO_VER__ = '0.2.1';
 </script>
 <script>
 /* ========== 应用逻辑 ========== */
@@ -2937,16 +2940,44 @@ window.__POTATO_VER__ = '0.2.0';
     if (!src) return;
     var url = joinUrl(src, btn.getAttribute('data-file') || 'index.html');
     if (location.protocol === 'file:') {
-      // 本地副本无法自动替换文件 → 引导打开在线最新版
+      // 网页无法改写本地文件。手机端连「写文件」的手段都没有（update.bat 是 Windows 脚本，
+      // 手机上跑不了），只能改用在线版；这里给一条把数据带走的出路：导出整库数据包。
+      var mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
       $('#modal').classList.remove('wide');
-      $('#modalBody').innerHTML = '<div class="hintline" style="line-height:1.9">本地副本无法自动更新文件。<br>' +
-        '点下方按钮打开在线最新版（建议收藏该链接，以后直接用它就能自动更新）。</div>';
+      $('#modalBody').innerHTML = '<div class="hintline" style="line-height:1.9">' +
+        (mobile
+          ? '本地副本无法自动更新：<b>手机浏览器不允许网页改写本地文件</b>，这是系统安全限制，' +
+            '和 update.bat 无关（那是 Windows 脚本，手机上无法运行）。<br>' +
+            '正确做法是改用下面的<b>在线版</b>——它每次打开都是最新，收藏即可。' +
+            '想保留现在的卡牌：先点「导出整库数据包」，打开在线版后再导入这份文件。'
+          : '本地副本无法自动更新文件（浏览器不允许网页改磁盘）。<br>' +
+            '两种办法：① 直接打开下方在线版，它每次都是最新；② 在程序目录里双击 <b>update.bat</b>，自动替换本地 index.html。') +
+        '</div>' +
+        '<div class="upd-linkrow"><input id="updUrl" readonly value="' + esc(url) + '">' +
+        '<button class="btn" id="updCopy">复制</button></div>';
       $('#modalFoot').innerHTML =
         '<button class="btn" id="uCancel">取消</button>' +
+        '<button class="btn" id="uExport">导出整库数据包</button>' +
         '<button class="btn solid" id="uGo">打开在线最新版</button>';
       showModal('获取更新');
       $('#uGo').onclick = function () { closeModal(); window.open(url, '_blank'); };
       $('#uCancel').onclick = closeModal;
+      $('#updCopy').onclick = function () {
+        copyText(url).then(function (ok) { toast(ok ? '已复制在线版链接' : '复制失败，请长按链接手动复制'); });
+      };
+      $('#uExport').onclick = function () {
+        var by = '';
+        try { by = localStorage.getItem('potato.exporter') || ''; } catch (e) { /* 隐私模式 */ }
+        var pkg = makePackage({ by: by });
+        var name = '土豆牌_数据包_' + stamp() + '.pcard';
+        var text = JSON.stringify(pkg, null, 2);
+        closeModal();
+        exportToFile(name, text).then(function (r) {
+          if (r && r.cancel) return;
+          if (!(r && r.ok)) download(name, text);
+          toast('已导出整库数据包，打开在线版后导入它即可');
+        });
+      };
     } else {
       location.href = url;
     }

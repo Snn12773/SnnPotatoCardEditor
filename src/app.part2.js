@@ -849,16 +849,44 @@
     if (!src) return;
     var url = joinUrl(src, btn.getAttribute('data-file') || 'index.html');
     if (location.protocol === 'file:') {
-      // 本地副本无法自动替换文件 → 引导打开在线最新版
+      // 网页无法改写本地文件。手机端连「写文件」的手段都没有（update.bat 是 Windows 脚本，
+      // 手机上跑不了），只能改用在线版；这里给一条把数据带走的出路：导出整库数据包。
+      var mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 1;
       $('#modal').classList.remove('wide');
-      $('#modalBody').innerHTML = '<div class="hintline" style="line-height:1.9">本地副本无法自动更新文件。<br>' +
-        '点下方按钮打开在线最新版（建议收藏该链接，以后直接用它就能自动更新）。</div>';
+      $('#modalBody').innerHTML = '<div class="hintline" style="line-height:1.9">' +
+        (mobile
+          ? '本地副本无法自动更新：<b>手机浏览器不允许网页改写本地文件</b>，这是系统安全限制，' +
+            '和 update.bat 无关（那是 Windows 脚本，手机上无法运行）。<br>' +
+            '正确做法是改用下面的<b>在线版</b>——它每次打开都是最新，收藏即可。' +
+            '想保留现在的卡牌：先点「导出整库数据包」，打开在线版后再导入这份文件。'
+          : '本地副本无法自动更新文件（浏览器不允许网页改磁盘）。<br>' +
+            '两种办法：① 直接打开下方在线版，它每次都是最新；② 在程序目录里双击 <b>update.bat</b>，自动替换本地 index.html。') +
+        '</div>' +
+        '<div class="upd-linkrow"><input id="updUrl" readonly value="' + esc(url) + '">' +
+        '<button class="btn" id="updCopy">复制</button></div>';
       $('#modalFoot').innerHTML =
         '<button class="btn" id="uCancel">取消</button>' +
+        '<button class="btn" id="uExport">导出整库数据包</button>' +
         '<button class="btn solid" id="uGo">打开在线最新版</button>';
       showModal('获取更新');
       $('#uGo').onclick = function () { closeModal(); window.open(url, '_blank'); };
       $('#uCancel').onclick = closeModal;
+      $('#updCopy').onclick = function () {
+        copyText(url).then(function (ok) { toast(ok ? '已复制在线版链接' : '复制失败，请长按链接手动复制'); });
+      };
+      $('#uExport').onclick = function () {
+        var by = '';
+        try { by = localStorage.getItem('potato.exporter') || ''; } catch (e) { /* 隐私模式 */ }
+        var pkg = makePackage({ by: by });
+        var name = '土豆牌_数据包_' + stamp() + '.pcard';
+        var text = JSON.stringify(pkg, null, 2);
+        closeModal();
+        exportToFile(name, text).then(function (r) {
+          if (r && r.cancel) return;
+          if (!(r && r.ok)) download(name, text);
+          toast('已导出整库数据包，打开在线版后导入它即可');
+        });
+      };
     } else {
       location.href = url;
     }
